@@ -86,6 +86,7 @@ Expected:
 - No source chat messages are deleted by the extension.
 - Empty or filter-like provider output triggers a visible retry/fallback notice.
 - If the provider still returns no usable text, Memoir preserves the selected original summaries as editable manual-revision text.
+- The Fusion Prompt card's `Save Edits` button persists edits to the fusion system prompt and user template across reload, and `Restore Default` returns both fields to the built-in defaults and persists that change.
 
 ## 6. Mature Content Archive Compatibility
 
