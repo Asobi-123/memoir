@@ -231,6 +231,10 @@ function settingsPage(){
         <div class="cc-hint">${t("settings.fusionHint")}</div>
         <label class="cc-field"><span>${t("settings.fusionSystem")}</span><textarea id="cc-fusion-system" class="cc-textarea" rows="6"></textarea></label>
         <label class="cc-field"><span>${t("settings.fusionUserTemplate")}</span><textarea id="cc-fusion-user-template" class="cc-textarea" rows="6"></textarea></label>
+        <div class="cc-actions">
+            <button id="cc-fusion-save" class="cc-btn">${t("settings.fusionSave")}</button>
+            <button id="cc-fusion-reset" class="cc-btn">${t("settings.fusionReset")}</button>
+        </div>
         </div>
     </div>
 </section>`;}

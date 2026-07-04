@@ -89,6 +89,8 @@
   "settings.fusionHint": "融合有独立的提示词，不与主总结共用。",
   "settings.fusionSystem": "融合提示词",
   "settings.fusionUserTemplate": "融合用户模板",
+  "settings.fusionSave": "保存修改",
+  "settings.fusionReset": "恢复默认",
   "settings.builtInPresets": "内置",
   "settings.customPresets": "自定义",
 
@@ -160,6 +162,8 @@
   "toast.fusionDone": "融合压缩完成。",
   "toast.fusionDoneAfterRetry": "融合压缩已通过加强重试完成。",
   "toast.fusionFallbackUsed": "融合 API 仍然空回，已保留原总结为待人工修订文本。",
+  "toast.fusionPromptSaved": "融合提示词已保存。",
+  "toast.fusionPromptReset": "已恢复融合提示词默认值。",
   "toast.confirmClearAll": "确定清空全部总结？注入内容也会同时清空。",
 
   "promptNote.builtInDirty": "当前是内置预设，已修改但不能覆盖。请用「另存为」保留。",

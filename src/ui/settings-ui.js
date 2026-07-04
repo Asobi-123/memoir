@@ -27,6 +27,7 @@ import {
     CONTENT_COMPATIBILITY_PATCH_TEXT,
     upsertCustomPromptProfile,
 } from "../prompts/prompt-registry.js";
+import { DEFAULT_SETTINGS } from "../state/defaults.js";
 import { refreshStatusPanel } from "./status-panel.js";
 import { refreshSegmentsPanel } from "./segments-panel.js";
 import { bindDraftPanel, fillSuggestedDraftRange } from "./draft-panel.js";
@@ -328,6 +329,26 @@ function bindSettingsEvents() {
         setValue("cc-content-compatibility-patch-text", CONTENT_COMPATIBILITY_PATCH_TEXT);
         notify("info", t("toast.contentCompatibilityReset"));
         refreshStatusPanel();
+    });
+
+    // Fusion prompt — save edits
+    document.getElementById("cc-fusion-save")?.addEventListener("click", () => {
+        updateSettings({
+            fusionSystemPrompt: getValue("cc-fusion-system"),
+            fusionUserTemplate: getValue("cc-fusion-user-template"),
+        });
+        notify("success", t("toast.fusionPromptSaved"));
+    });
+
+    // Fusion prompt — reset to built-in default
+    document.getElementById("cc-fusion-reset")?.addEventListener("click", () => {
+        updateSettings({
+            fusionSystemPrompt: DEFAULT_SETTINGS.fusionSystemPrompt,
+            fusionUserTemplate: DEFAULT_SETTINGS.fusionUserTemplate,
+        });
+        setValue("cc-fusion-system", DEFAULT_SETTINGS.fusionSystemPrompt);
+        setValue("cc-fusion-user-template", DEFAULT_SETTINGS.fusionUserTemplate);
+        notify("info", t("toast.fusionPromptReset"));
     });
 
     document.getElementById("cc-prompt-profile")?.addEventListener("change", () => {

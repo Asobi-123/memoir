@@ -89,6 +89,8 @@
   "settings.fusionHint": "Fusion has its own prompts, separate from main summarization.",
   "settings.fusionSystem": "Fusion Prompt",
   "settings.fusionUserTemplate": "Fusion User Template",
+  "settings.fusionSave": "Save Edits",
+  "settings.fusionReset": "Restore Default",
   "settings.builtInPresets": "Built-in",
   "settings.customPresets": "Custom",
 
@@ -160,6 +162,8 @@
   "toast.fusionDone": "Merge complete.",
   "toast.fusionDoneAfterRetry": "Merge completed after reinforced retry.",
   "toast.fusionFallbackUsed": "Fusion API still returned empty content. Original summaries were preserved as text for manual revision.",
+  "toast.fusionPromptSaved": "Fusion prompts saved.",
+  "toast.fusionPromptReset": "Restored fusion prompt defaults.",
   "toast.confirmClearAll": "Clear all summaries? Injection content will also be cleared.",
 
   "promptNote.builtInDirty": "This is a built-in preset. Edits can't overwrite it — use 'Save As'.",
