@@ -113,6 +113,7 @@ function summaryPage(){return `<section class="cc-page" data-cc-page="summary">
                     <option value="1">${t("inject.positionChat")}</option>
                 </select>
                 <div class="cc-hint" id="cc-inject-position-hint"></div>
+                <div class="cc-hint cc-warning" id="cc-inject-position-unsupported" hidden></div>
             </label>
             <label class="cc-field"><span>${t("inject.role")}</span>
                 <select id="cc-inject-role" class="cc-input">
@@ -124,8 +125,14 @@ function summaryPage(){return `<section class="cc-page" data-cc-page="summary">
         </div>
         <div class="cc-g2" style="margin-top:10px">
             <label class="cc-field"><span>${t("inject.depth")}</span>
+                <select id="cc-inject-depth-mode" class="cc-input">
+                    <option value="manual">${t("inject.depthModeManual")}</option>
+                    <option value="auto">${t("inject.depthModeAuto")}</option>
+                </select>
                 <input id="cc-inject-depth" class="cc-input" type="number" min="0" max="999" step="1">
                 <div class="cc-hint">${t("inject.depthDesc")}</div>
+                <div class="cc-hint cc-warning" id="cc-inject-depth-auto-note" hidden></div>
+                <div class="cc-hint" id="cc-inject-depth-floor-hint" hidden></div>
             </label>
             <label class="cc-field"><span>${t("inject.wrapTag")}</span>
                 <input id="cc-inject-wrap-tag" class="cc-input" type="text" placeholder="${t("inject.wrapTagPlaceholder")}">
@@ -539,7 +546,7 @@ const CSS = `
 .cc-btn-sm{min-height:36px;padding:6px 10px;min-width:auto}
 
 /* Hints */
-.cc-hint{font-size:.84em;color:var(--cc-dim);line-height:1.5;margin-top:6px}
+.cc-hint{font-size:.84em;color:var(--cc-dim);line-height:1.5;margin-top:6px}.cc-warning{color:#f0b35a}
 .cc-prompt-note{font-size:.84em;line-height:1.5;margin-top:8px}.cc-note-warning{color:#f0b35a}.cc-note-dirty{color:#ffdf80;font-weight:600}
 .cc-segment-meta{font-size:.84em;color:var(--cc-dim);line-height:1.5;margin-bottom:10px}.cc-segment-summary{min-height:160px}
 .cc-inject-row{display:flex;flex-direction:column;gap:4px}

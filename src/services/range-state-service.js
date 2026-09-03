@@ -1,5 +1,8 @@
+import { IGNORE_SYMBOL } from "/scripts/constants.js";
 import { getChatMessages } from "../core/context.js";
 import { listApprovedRanges } from "../state/chat-segment-store.js";
+import { isMessageExcludedFromContext } from "./chat-visibility.js";
+import { calculateAutomaticInjectionDepth } from "./injection-depth-calculator.js";
 
 function normalizeRange(startMes, endMes) {
     const start = Number(startMes);
@@ -80,8 +83,16 @@ export function getChangedRanges() {
 
 export function getHiddenRanges() {
     const messages = getChatMessages();
-    const mask = messages.map((message) => message?.is_system === true);
+    const mask = messages.map(isHiddenFromPrompt);
     return maskToRanges(mask);
+}
+
+export function getAutomaticInjectionDepth(messages = getChatMessages(), approvedRanges = listApprovedRanges()) {
+    return calculateAutomaticInjectionDepth(messages.map(isHiddenFromPrompt), approvedRanges);
+}
+
+function isHiddenFromPrompt(message) {
+    return isMessageExcludedFromContext(message, IGNORE_SYMBOL);
 }
 
 export function getPendingRanges() {

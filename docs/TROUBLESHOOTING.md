@@ -55,6 +55,16 @@ Also note:
 
 If you need more stable behavior, use `Character Layer` instead of `Chat Injection Layer`.
 
+## Character Layer Is Unavailable
+
+Memoir disables `Character Layer` when the active Chat Completion preset does not support that location. Choose `Top Layer` or `Chat Injection Layer`, or switch to a compatible preset. Memoir does not modify third-party presets automatically.
+
+## Automatic Chat Placement Is Unavailable Or Looks Wrong
+
+Automatic chat placement only applies when the beginning of the chat is one continuous hidden range and every message in that range is covered by approved Memoir summaries. If there is a visible gap, a hidden message later in the chat, or incomplete summary coverage, choose a manual depth instead.
+
+SillyTavern `/hide` uses zero-based message indexes while Memoir displays floors starting at 1. To hide Memoir floors 1 through 60, use `/hide 0-59` in SillyTavern.
+
 ## Custom Prompt Editing Broke Generation
 
 Memoir lets you rewrite the built-in prompt templates, but the user template still needs these variables:

@@ -35,6 +35,8 @@ Memoir (古法 Memoir) is a third-party SillyTavern extension that provides cont
 │  summary-draft-service.js — generation  │
 │  approval-service.js — confirm/discard  │
 │  injection-service.js — context inject  │
+│  injection-depth-calculator.js           │
+│  injection-compatibility.js              │
 │  fusion-service.js — merge & compress   │
 │  summary-token-service.js — token stats │
 │  segment-hash-service.js — SHA-256      │
@@ -77,6 +79,10 @@ Independent API mode falls back to shared API if config is incomplete. Summary g
 
 ### Relative injection strategy
 Memoir uses SillyTavern's extension prompt layer and depth controls as a relative strategy, not an absolute insertion point. Within the same layer and depth, final ordering still follows SillyTavern's prompt assembly rules.
+
+The Character Layer is available only when the active Chat Completion prompt collection supports that host location. When it is unavailable, Memoir clears its injection rather than silently moving it to another layer.
+
+Chat Injection Layer also supports an automatic depth mode. It is valid only when the chat begins with one continuous hidden prefix and that prefix is fully covered by approved Memoir summary ranges. The effective depth is the number of visible messages after that prefix, which places the cumulative summary before the first visible message. Memoir refreshes this state after chat changes and when a message's hidden status changes.
 
 ### Summary length display
 Confirmed summaries can be measured with SillyTavern's token counter. Memoir now counts only the current cumulative summary text for UI display and editing feedback.

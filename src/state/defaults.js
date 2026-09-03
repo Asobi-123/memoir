@@ -21,6 +21,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
     summaryEmptyRetryEnabled: true,
     autoInjectApproved: true,
     injectionPosition: 0,
+    injectionDepthMode: "manual",
     injectionDepth: 1,
     injectionRole: 0,
     injectionWrapTag: "",

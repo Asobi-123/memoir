@@ -29,6 +29,7 @@ Current shape:
   "fusionResponseLength": 0,
   "autoInjectApproved": true,
   "injectionPosition": 0,
+  "injectionDepthMode": "manual",
   "injectionDepth": 1,
   "injectionRole": 0,
   "injectionWrapTag": "",
@@ -38,6 +39,11 @@ Current shape:
   "fusionUserTemplate": "..."
 }
 ```
+
+`injectionDepthMode` is either `manual` or `auto`. Automatic mode only applies to
+the Chat Injection Layer. It derives the effective depth from a continuous hidden
+history prefix that is fully covered by the approved summary ranges; the stored
+`injectionDepth` remains the manual fallback value.
 
 ## Chat Store
 

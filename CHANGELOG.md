@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.3.0] - 2026-09-04
+
+### Added
+
+- **Automatic chat-layer placement** - Chat-layer injection can now automatically place approved summaries immediately before the first visible message after a continuously hidden, summarized prefix. The position updates as messages are added or hidden.
+- **Chat floor numbering guidance** - Automatic placement now explains the difference between SillyTavern's zero-based `/hide` floors and Memoir's one-based floor display.
+
+### Fixed
+
+- **Preset-aware character-layer injection** - Memoir now disables the character-layer option when the active Chat Completion preset cannot support it, preventing summaries from silently failing to inject.
+- **Live hidden-state updates** - The status panel and automatic chat-layer position now refresh immediately after `/hide` or `/unhide`, without reopening the chat or refreshing SillyTavern.
+
 ## [1.2.0] - 2026-07-04
 
 ### Added

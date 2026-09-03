@@ -197,6 +197,7 @@ function migrateLegacySettings(bucket) {
             : DEFAULT_SETTINGS.contentCompatibilityPatchText;
     bucket.summaryEmptyRetryEnabled =
         bucket.summaryEmptyRetryEnabled ?? DEFAULT_SETTINGS.summaryEmptyRetryEnabled;
+    bucket.injectionDepthMode = bucket.injectionDepthMode === "auto" ? "auto" : "manual";
 }
 
 function normalizeApiProfileMode(profile) {

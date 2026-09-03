@@ -62,6 +62,10 @@ Steps:
 1. Open the collapsible `Injection Strategy` card.
 2. Switch between `Top Layer`, `Character Layer`, and `Chat Injection Layer`.
 3. Change `Layer Depth`, `Message Role`, and wrapper tag.
+4. With a compatible Chat Completion preset selected, verify that `Character Layer` remains available.
+5. Switch to a preset that does not support the Character Layer and verify that the option is disabled and any prior Memoir character-layer injection is removed.
+6. Confirm a summary for an initial message range, hide that complete range in SillyTavern, then select `Chat Injection Layer` and `Automatic` depth.
+7. Use `/hide` and `/unhide` on a message and verify that the panel state and automatic depth change without reopening the chat.
 
 Expected:
 
@@ -69,6 +73,8 @@ Expected:
 - Changes save correctly and persist after refresh.
 - Wrapper tags appear around injected summary text when configured.
 - Chat-layer injection behaves as a relative position, not an absolute final slot.
+- Automatic depth places the summary before the first visible message only when the preceding hidden prefix is fully summarized.
+- The automatic-depth note explains that SillyTavern `/hide` starts at message 0 while Memoir floors start at 1.
 
 ## 5. Merge & Compress
 
@@ -180,7 +186,7 @@ Expected:
 
 Before tagging a release:
 
-- `manifest.json` version is `1.1.1`.
+- `manifest.json` version is `1.3.0`.
 - `README.md` and `README_EN.md` point to the correct repository URL.
 - `CHANGELOG.md` contains the release entry and date.
 - JavaScript syntax check passes.

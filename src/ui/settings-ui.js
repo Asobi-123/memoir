@@ -31,7 +31,8 @@ import { DEFAULT_SETTINGS } from "../state/defaults.js";
 import { refreshStatusPanel } from "./status-panel.js";
 import { refreshSegmentsPanel } from "./segments-panel.js";
 import { bindDraftPanel, fillSuggestedDraftRange } from "./draft-panel.js";
-import { syncInjectionPrompt } from "../services/injection-service.js";
+import { isCharacterLayerAvailable, syncInjectionPrompt } from "../services/injection-service.js";
+import { refreshInjectionDepthControl } from "./injection-depth-control.js";
 import { openPanel, setTriggerVisible } from "./panel.js";
 
 let mounted = false;
@@ -139,9 +140,12 @@ function fillForm() {
     setValue("cc-content-compatibility-patch-text", getContentCompatibilityPatchText(settings));
     setChecked("cc-auto-inject", settings.autoInjectApproved);
     setValue("cc-inject-position", settings.injectionPosition ?? 0);
+    setValue("cc-inject-depth-mode", settings.injectionDepthMode ?? "manual");
     setValue("cc-inject-depth", settings.injectionDepth ?? 1);
     setValue("cc-inject-role", settings.injectionRole ?? 0);
     setValue("cc-inject-wrap-tag", settings.injectionWrapTag || "");
+    refreshInjectionCompatibility();
+    refreshInjectionDepthControl();
     setValue("cc-summary-response-length", settings.summaryResponseLength ?? 0);
     setValue("cc-fusion-response-length", settings.fusionResponseLength ?? 0);
     updatePositionHint();
@@ -218,17 +222,23 @@ function bindSettingsEvents() {
     });
 
     // Injection controls — auto-save on change
-    for (const id of ["cc-auto-inject", "cc-inject-position", "cc-inject-depth", "cc-inject-role", "cc-inject-wrap-tag"]) {
+    for (const id of ["cc-auto-inject", "cc-inject-position", "cc-inject-depth-mode", "cc-inject-depth", "cc-inject-role", "cc-inject-wrap-tag"]) {
         const evType = id === "cc-inject-wrap-tag" ? "change" : "change";
         document.getElementById(id)?.addEventListener(evType, async () => {
-            updateSettings({
+            const injectionDepthMode = getValue("cc-inject-depth-mode") === "auto" ? "auto" : "manual";
+            const injectionPatch = {
                 autoInjectApproved: isChecked("cc-auto-inject"),
                 injectionPosition: Number(getValue("cc-inject-position")) || 0,
-                injectionDepth: Number(getValue("cc-inject-depth")) || 1,
+                injectionDepthMode,
                 injectionRole: Number(getValue("cc-inject-role")) || 0,
                 injectionWrapTag: getValue("cc-inject-wrap-tag").trim(),
-            });
+            };
+            if (injectionDepthMode === "manual") {
+                injectionPatch.injectionDepth = normalizeNonNegativeInteger(getValue("cc-inject-depth"), 1);
+            }
+            updateSettings(injectionPatch);
             updatePositionHint();
+            refreshInjectionDepthControl();
             await syncInjectionPrompt();
             refreshStatusPanel();
             refreshSegmentsPanel();
@@ -550,7 +560,10 @@ function bindSettingsEvents() {
             fusionResponseLength: normalizeNonNegativeInteger(getValue("cc-fusion-response-length"), 0),
             autoInjectApproved: isChecked("cc-auto-inject"),
             injectionPosition: Number(getValue("cc-inject-position")) || 0,
-            injectionDepth: Number(getValue("cc-inject-depth")) || 1,
+            injectionDepthMode: getValue("cc-inject-depth-mode") === "auto" ? "auto" : "manual",
+            ...(getValue("cc-inject-depth-mode") === "auto"
+                ? {}
+                : { injectionDepth: normalizeNonNegativeInteger(getValue("cc-inject-depth"), 1) }),
             injectionRole: Number(getValue("cc-inject-role")) || 0,
             injectionWrapTag: getValue("cc-inject-wrap-tag").trim(),
             defaultRangeSize: Number(getValue("cc-default-range-size")) || 20,
@@ -653,6 +666,25 @@ function updatePositionHint() {
     const pos = getValue("cc-inject-position");
     const map = { "2": t("inject.positionBeforeHint"), "0": t("inject.positionAfterHint"), "1": t("inject.positionChatHint") };
     hint.textContent = map[pos] || "";
+}
+
+export function refreshInjectionCompatibility() {
+    const positionSelect = document.getElementById("cc-inject-position");
+    const characterOption = positionSelect?.querySelector('option[value="0"]');
+    const notice = document.getElementById("cc-inject-position-unsupported");
+    const unavailable = !isCharacterLayerAvailable();
+    const selectedCharacterLayer = String(getSettings().injectionPosition ?? 0) === "0";
+
+    if (characterOption) {
+        characterOption.disabled = unavailable;
+    }
+
+    if (notice) {
+        notice.hidden = !unavailable || !selectedCharacterLayer;
+        notice.textContent = unavailable && selectedCharacterLayer
+            ? t("inject.positionUnsupported")
+            : "";
+    }
 }
 
 async function loadSidebarHtml() {

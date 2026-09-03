@@ -6,6 +6,7 @@ import { approveDraft, getCurrentDraft, rejectDraft } from "../services/approval
 import { syncInjectionPrompt } from "../services/injection-service.js";
 import { refreshStatusPanel } from "./status-panel.js";
 import { refreshSegmentsPanel } from "./segments-panel.js";
+import { refreshInjectionDepthControl } from "./injection-depth-control.js";
 import { getSettings, updateIndependentApiConfig, updateSettings } from "../state/settings-store.js";
 import { getSuggestedDraftRange } from "../services/range-suggestion-service.js";
 import { normalizeContentCompatibilityPatchText } from "../prompts/prompt-registry.js";
@@ -57,6 +58,7 @@ export function bindDraftPanel() {
             const result = approveDraft(currentDraftId);
             currentDraftId = null;
             await syncInjectionPrompt();
+            refreshInjectionDepthControl();
             renderApprovedSummaryPreview(result.cumulativeSummary);
             refreshStatusPanel();
             refreshSegmentsPanel();

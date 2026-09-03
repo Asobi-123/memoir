@@ -10,6 +10,7 @@ import { runFusionCompression } from "../services/fusion-service.js";
 import { syncInjectionPrompt } from "../services/injection-service.js";
 import { getApprovedSummaryTokenStats } from "../services/summary-token-service.js";
 import { refreshStatusPanel } from "./status-panel.js";
+import { refreshInjectionDepthControl } from "./injection-depth-control.js";
 import { enhanceAllTextareas } from "./panel.js";
 import {
     describeTokenStats,
@@ -75,20 +76,20 @@ function bindActions(root) {
 
     root.querySelector("#cc-cumulative-save")?.addEventListener("click", async () => {
         if (!(ta instanceof HTMLTextAreaElement)) return;
-        saveCumulativeSummary(ta.value); await syncInjectionPrompt(); refreshStatusPanel();
+        saveCumulativeSummary(ta.value); await syncInjectionPrompt(); refreshInjectionDepthControl(); refreshStatusPanel();
         void renderTokenStats(root, ta.value);
         notify("success", t("toast.cumulativeSaved"));
     });
     root.querySelector("#cc-cumulative-reset")?.addEventListener("click", async () => {
         const bl = getApprovedBaselineSummary();
         if (ta instanceof HTMLTextAreaElement) ta.value = bl;
-        saveCumulativeSummary(bl); await syncInjectionPrompt(); refreshStatusPanel();
+        saveCumulativeSummary(bl); await syncInjectionPrompt(); refreshInjectionDepthControl(); refreshStatusPanel();
         void renderTokenStats(root, bl);
         notify("info", t("toast.cumulativeReset"));
     });
     root.querySelector("#cc-cumulative-clear")?.addEventListener("click", async () => {
         if (!globalThis.confirm?.(t("toast.confirmClearAll"))) return;
-        clearAllApprovedSummaries(); await syncInjectionPrompt(); refreshStatusPanel(); refreshSegmentsPanel();
+        clearAllApprovedSummaries(); await syncInjectionPrompt(); refreshInjectionDepthControl(); refreshStatusPanel(); refreshSegmentsPanel();
         notify("warning", t("toast.cumulativeCleared"));
     });
     root.querySelector("#cc-cumulative-fuse")?.addEventListener("click", async () => {
@@ -99,7 +100,7 @@ function bindActions(root) {
             fuseSelection = { start: si > 0 ? String(si) : "", end: ei > 0 ? String(ei) : "" };
             isFusing = true; refreshSegmentsPanel(); notify("info", t("toast.fusionStarted"));
             const result = await runFusionCompression({ startIndex: si > 0 ? si : null, endIndex: ei > 0 ? ei : null });
-            await syncInjectionPrompt(); refreshStatusPanel();
+            await syncInjectionPrompt(); refreshInjectionDepthControl(); refreshStatusPanel();
             if (result.localFallbackUsed) {
                 notify("warning", t("toast.fusionFallbackUsed"));
             } else if (result.emptyRetryUsed) {
