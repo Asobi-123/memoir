@@ -45,7 +45,7 @@ export function compactDraft(draft) {
 }
 
 export function appendSummaryToStore(store, draft, taskId = null) {
-    if (taskId && store.approvedRanges?.some(r => r.taskId === taskId)) return false;
+    if (taskId && store.approvedRanges?.some(r => r.taskId === taskId || r.sourceTaskIds?.includes(taskId))) return false;
     const index = (store.approvedRanges?.length || 0) + 1;
     const title = `【第${index}次总结】(楼 ${draft.range.startMes + 1}-${draft.range.endMes + 1})`;
     const block = `${title}\n${String(draft.response.archiveSummary).trim()}`;

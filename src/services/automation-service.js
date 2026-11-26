@@ -41,10 +41,14 @@ export function createAutomationActions({ host, getStore, getSettings, generate,
     async function validateDraft(target, draft, before) {
         host.assertCurrent(target);
         const messages = host.context().chat.slice(draft.range.startMes, draft.range.endMes + 1);
+        const signature = sourceSignature(messages);
         if (draft.visibilitySignature && visibilitySignature(messages) !== draft.visibilitySignature) throw automationError("hidden-source");
         if (draft.chatKey !== target.key || messages.length !== draft.range.endMes - draft.range.startMes + 1 ||
             await hashMessageRange(messages, draft.hashVersion || 1) !== draft.sourceHash) throw automationError("source-changed");
         host.assertCurrent(target);
+        if (signature !== sourceSignature(host.context().chat.slice(draft.range.startMes, draft.range.endMes + 1))) {
+            throw automationError("source-changed");
+        }
         if (!sameSummary(getStore(), before) || isEditing()) throw automationError("summary-changed");
         if (host.busy()) throw automationError("busy");
     }

@@ -4,6 +4,7 @@ import { getChatRange, getCurrentChatKey } from "../core/context.js";
 import { hashMessageRange } from "./segment-hash-service.js";
 import {
     getCumulativeSummary,
+    listApprovedRanges,
     overwriteApprovedRanges,
     saveCumulativeSummary,
 } from "../state/chat-segment-store.js";
@@ -22,6 +23,8 @@ export async function runFusionCompression({ startIndex = null, endIndex = null 
         throw new Error("当前没有可融合压缩的累计总结正文。");
     }
 
+    const ranges = structuredClone(listApprovedRanges());
+    const rangeSnapshot = JSON.stringify(ranges);
     const blocks = splitSummaryBlocks(current);
     if (!blocks.length) {
         throw new Error("当前累计总结正文里没有可识别的总结块。");
@@ -30,11 +33,36 @@ export async function runFusionCompression({ startIndex = null, endIndex = null 
     const start = normalizeIndex(startIndex, 1);
     const end = normalizeIndex(endIndex, blocks.length);
 
-    if (start > end) {
-        throw new Error("融合范围无效：起始总结序号不能大于结束总结序号。");
+    if (start > end || start > blocks.length || end > blocks.length ||
+        blocks.length !== ranges.length || blocks.some((block, index) =>
+            !block.title || block.startFloor !== ranges[index].startMes + 1 ||
+            block.endFloor !== ranges[index].endMes + 1 || block.endFloor < block.startFloor)) {
+        throw new Error("fusion-invalid-range");
     }
 
     const targetBlocks = blocks.slice(start - 1, end);
+    for (let index = 1; index < targetBlocks.length; index++) {
+        if (targetBlocks[index].startFloor !== targetBlocks[index - 1].endFloor + 1) {
+            throw new Error("fusion-range-gap");
+        }
+    }
+    const sourceSnapshots = ranges.map(range => structuredClone(getChatRange(range.startMes, range.endMes)));
+    const assertUnchanged = () => {
+        if (chatKey !== getCurrentChatKey()) throw new Error("chat-changed");
+        if (current !== getCumulativeSummary().trim() || rangeSnapshot !== JSON.stringify(listApprovedRanges())) {
+            throw new Error("summary-changed");
+        }
+        if (ranges.some((range, index) => JSON.stringify(sourceSnapshots[index]) !==
+            JSON.stringify(getChatRange(range.startMes, range.endMes)))) throw new Error("source-changed");
+    };
+    for (const [index, range] of ranges.entries()) {
+        if (range.changed || ![undefined, 1, 2].includes(range.hashVersion) ||
+            sourceSnapshots[index].length !== range.endMes - range.startMes + 1 ||
+            await hashMessageRange(sourceSnapshots[index], range.hashVersion || 1) !== range.sourceHash) {
+            throw new Error("source-changed");
+        }
+    }
+    assertUnchanged();
     const before = blocks.slice(0, start - 1);
     const after = blocks.slice(end);
 
@@ -118,23 +146,24 @@ export async function runFusionCompression({ startIndex = null, endIndex = null 
 
     const renumbered = rebuilt.map((block, index) => buildNumberedBlock(index + 1, block.startFloor, block.endFloor, block.body));
     const finalText = renumbered.join("\n\n").trim();
-    const rebuiltRanges = rebuilt.map((block, index) => ({
-        id: `range_rebuilt_${Date.now()}_${index}`,
-        index: index + 1,
-        title: `【第${index + 1}次总结】(楼 ${block.startFloor}-${block.endFloor})`,
-        startMes: Math.max(0, (block.startFloor || 1) - 1),
-        endMes: Math.max(0, (block.endFloor || 1) - 1),
-        sourceHash: "",
+    // Preserve provenance through repeated fusion, including older automatic batches.
+    const selectedRanges = ranges.slice(start - 1, end);
+    const sourceTaskIds = [...new Set(selectedRanges.flatMap(range =>
+        [range.taskId, ...(range.sourceTaskIds || [])].filter(Boolean)))];
+    const mergedMeta = {
+        id: `range_fused_${Date.now()}`,
+        startMes: mergedRange.startFloor - 1,
+        endMes: mergedRange.endFloor - 1,
+        sourceHash: await hashMessageRange(sourceSnapshots.slice(start - 1, end).flat()),
+        hashVersion: 2,
         changed: false,
         approvedAt: Date.now(),
-    }));
-
-    for (const range of rebuiltRanges) {
-        if (chatKey !== getCurrentChatKey()) throw new Error("chat-changed");
-        range.sourceHash = await hashMessageRange(getChatRange(range.startMes, range.endMes));
-        range.hashVersion = 2;
-    }
-    if (chatKey !== getCurrentChatKey() || current !== getCumulativeSummary().trim()) throw new Error("summary-changed");
+        ...(sourceTaskIds.length ? { sourceTaskIds } : {}),
+    };
+    const rebuiltRanges = [...ranges.slice(0, start - 1), mergedMeta, ...ranges.slice(end)]
+        .map((range, index) => ({ ...range, index: index + 1,
+            title: `【第${index + 1}次总结】(楼 ${range.startMes + 1}-${range.endMes + 1})` }));
+    assertUnchanged();
     saveCumulativeSummary(finalText);
     overwriteApprovedRanges(rebuiltRanges, { updateBaseline: false });
     return {

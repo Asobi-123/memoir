@@ -23,6 +23,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- Fusion now rejects gaps, invalid floor headings and stale source content, preserves automatic task provenance through repeated merges, and retains protection against clearing summaries of still-hidden history.
+- Fullscreen summary edits cannot cross chat boundaries; a rejected application keeps the text available for copying.
+- Draft validation detects source or visibility edits made while asynchronous hashing is pending.
 - Source fingerprints now distinguish text/swipe changes from visibility changes and normalize the host's implicit original swipe. Legacy fingerprints are migrated only after verification.
 - Manual summary operations coordinate with automatic tasks, preserve unsaved editor text during refreshes, and reject results belonging to another chat.
 

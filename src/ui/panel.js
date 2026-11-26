@@ -1,4 +1,6 @@
 import { t } from "../i18n.js";
+import { getCurrentChatKey } from "../core/context.js";
+import { notify } from "../utils.js";
 import { getSettings, updateSettings } from "../state/settings-store.js";
 
 const ID = { trigger:"cc-trigger", overlay:"cc-overlay", modal:"cc-modal", close:"cc-modal-close", style:"cc-panel-injected-style" };
@@ -350,8 +352,7 @@ export function openFullscreenEditor(text, onApply, title = "全屏编辑", { se
     requestAnimationFrame(() => fsTA.focus());
     overlay.querySelector("[data-cc-fs=cancel]").addEventListener("click", () => overlay.remove());
     overlay.querySelector("[data-cc-fs=apply]").addEventListener("click", () => {
-        onApply(fsTA.value);
-        overlay.remove();
+        if (onApply(fsTA.value) !== false) overlay.remove();
     });
 
     if (search) {
@@ -428,7 +429,12 @@ function enhanceAllTextareas() {
             e.preventDefault();
             const label = ta.closest(".cc-field")?.querySelector("span")?.textContent || "全屏编辑";
             const useSearch = searchIds.has(id);
+            const ownerChatKey = getCurrentChatKey();
             openFullscreenEditor(ta.value, (newText) => {
+                if (!ta.isConnected || (useSearch && ownerChatKey !== getCurrentChatKey())) {
+                    notify("error", t("automation.reason.editor-target-changed"));
+                    return false;
+                }
                 ta.value = newText;
                 ta.dispatchEvent(new Event("input", { bubbles: true }));
                 ta.dispatchEvent(new Event("change", { bubbles: true }));

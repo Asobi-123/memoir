@@ -103,7 +103,7 @@ export function clearAllApprovedSummaries() {
 function assertHistoryAvailable(nextText) {
     if (String(nextText || "").trim()) return;
     const messages = getChatMessages();
-    if (listApprovedRanges().some(range => range.taskId &&
+    if (listApprovedRanges().some(range => (range.taskId || range.sourceTaskIds?.length) &&
         messages.slice(range.startMes, range.endMes + 1).some(message => message.is_system))) {
         throw Object.assign(new Error("hidden-history"), { code: "hidden-history" });
     }

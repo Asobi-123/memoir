@@ -94,7 +94,7 @@ The **Usage guide** button beside the heading opens the full instructions withou
 
 Draft mode waits for your review and preserves its pending result across reloads. Automatic adoption saves usable results without review. Hiding is a separate opt-in and never deletes source text. The workspace offers pause/resume, interrupted-operation reconciliation and conditional undo of the last automatic adoption. Discarding a draft or performing manual edits pauses automation; later edits can invalidate undo.
 
-After saving edits or a fusion result, select **Resume and check one batch** in the workspace. New summaries append to the edited cumulative text without restarting from floor 1. Preserve range headings when editing; fusion uses them to identify covered history.
+After saving edits or a fusion result, select **Resume and check one batch** in the workspace. New summaries append to the edited cumulative text without restarting from floor 1. Preserve range headings when editing; fusion uses them to identify covered history. Only adjacent summaries with consecutive floor ranges can be fused. Mismatched headings or changed sources block fusion and leave the existing text intact.
 
 Automatic generation uses saved prompt/template settings and currently requires an independent API. The shared API remains available for semi-automatic generation, but its global cancellation and temporary parameters cannot safely isolate background work. The Memoir panel may be closed; keep the SillyTavern browser tab running and use a browser with Web Locks, generally on HTTPS or localhost.
 
