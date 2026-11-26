@@ -158,7 +158,10 @@ function settingsPage(){
     }).join("");
     return `<section class="cc-page" data-cc-page="settings">
     <div class="cc-card cc-collapsible" id="cc-automation-settings">
-        <button type="button" id="cc-automation-toggle" class="cc-card-head cc-collapse-toggle" aria-expanded="true" aria-controls="cc-automation-body"><strong>${t("automation.title")}</strong><i class="fa-solid fa-chevron-down cc-collapse-icon"></i></button>
+        <div class="cc-card-head cc-automation-heading">
+            <div class="cc-automation-title"><strong>${t("automation.title")}</strong><button type="button" id="cc-automation-help" class="cc-btn cc-btn-sm" aria-haspopup="dialog">${t("automation.help.button")}</button></div>
+            <button type="button" id="cc-automation-toggle" class="cc-collapse-toggle" aria-label="${t("automation.toggleLabel")}" aria-expanded="true" aria-controls="cc-automation-body"><i class="fa-solid fa-chevron-down cc-collapse-icon"></i></button>
+        </div>
         <div class="cc-collapse-body" id="cc-automation-body">
             <div class="cc-hint">${t("automation.scope")}</div>
             <label class="cc-field"><span>${t("automation.mode")}</span><select id="cc-automation-mode" class="cc-input"><option value="manual">${t("automation.mode.manual")}</option><option value="draft">${t("automation.mode.draft")}</option><option value="auto-approve">${t("automation.mode.auto-approve")}</option></select></label>
@@ -525,7 +528,13 @@ const CSS = `
 .cc-card{border:1px solid color-mix(in srgb,var(--cc-border) 45%,transparent);border-radius:14px;background:color-mix(in srgb,var(--cc-surface) 50%,transparent);padding:14px}
 .cc-card+.cc-card{margin-top:10px}.cc-card-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}.cc-card-head strong{font-size:14px}
 #cc-automation-options{margin-top:10px}#cc-automation-hide-row{margin-top:10px}#cc-automation-profile{overflow-wrap:anywhere;margin-top:10px}#cc-automation-status{margin-bottom:10px}#cc-automation-reason:empty{display:none}.cc-modal [hidden]{display:none!important}
-#cc-automation-toggle{width:100%;min-height:36px;color:var(--cc-text);background:none;border:0;padding:0;text-align:start}
+#cc-automation-toggle{width:36px;min-height:36px;color:var(--cc-text);background:none;border:0;padding:0;flex-shrink:0}
+.cc-automation-title{display:flex;align-items:center;gap:10px;min-width:0}.cc-automation-title .cc-btn{flex-shrink:0}
+.cc-help-overlay{position:absolute;inset:0;z-index:12;display:flex;flex-direction:column;min-height:0;background:var(--cc-bg);color:var(--cc-text);border-radius:inherit;overflow:hidden}
+.cc-help-header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border-bottom:1px solid var(--cc-border);flex-shrink:0}
+.cc-help-header h2{font-size:16px;line-height:1.4;margin:0;color:var(--cc-text)}.cc-help-header .cc-btn{flex-shrink:0}
+.cc-help-body{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:16px;font-size:.9em;line-height:1.65;overflow-wrap:anywhere}
+.cc-help-body section+section{margin-top:20px}.cc-help-body h3{font-size:1em;line-height:1.5;margin:0 0 6px;color:var(--cc-accent)}.cc-help-body p{margin:0;white-space:pre-line;color:var(--cc-text)}
 
 /* Collapsible cards */
 .cc-collapse-toggle{cursor:pointer;user-select:none}

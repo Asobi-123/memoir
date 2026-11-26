@@ -20,6 +20,7 @@ function reasonText(code) {
 
 export function mountAutomationUi(service) {
     runtime = service;
+    byId("help")?.addEventListener("click", openAutomationHelp);
     byId("toggle")?.addEventListener("click", () => byId("toggle").setAttribute("aria-expanded",
         String(!byId("settings").classList.contains("cc-collapsed"))));
     for (const field of ["mode", "batch", "keep", "hide"]) {
@@ -65,6 +66,54 @@ export function mountAutomationUi(service) {
     action("recover", () => runtime.manual(target => runtime.actions.recover(target), { recovery: true }));
     action("undo", () => runtime.manual(target => runtime.actions.undo(target)));
     refreshAutomationUi(true);
+}
+
+function openAutomationHelp() {
+    const modal = document.getElementById("cc-modal");
+    if (!modal) return;
+    const existing = modal.querySelector(".cc-help-overlay");
+    if (existing) { existing.querySelector("button")?.focus(); return; }
+    const opener = byId("help");
+    const overlay = document.createElement("section");
+    overlay.className = "cc-help-overlay";
+    overlay.setAttribute("role", "dialog");
+    overlay.setAttribute("aria-modal", "true");
+    overlay.setAttribute("aria-labelledby", "cc-automation-help-title");
+    const header = document.createElement("div");
+    header.className = "cc-help-header";
+    const title = document.createElement("h2");
+    title.id = "cc-automation-help-title";
+    title.textContent = t("automation.help.title");
+    const close = document.createElement("button");
+    close.type = "button";
+    close.className = "cc-btn cc-btn-sm";
+    close.textContent = t("automation.help.close");
+    const dismiss = () => { overlay.remove(); opener?.focus({ preventScroll: true }); };
+    close.addEventListener("click", dismiss);
+    header.append(title, close);
+    const body = document.createElement("div");
+    body.className = "cc-help-body";
+    body.tabIndex = 0;
+    body.setAttribute("aria-label", t("automation.help.title"));
+    for (const topic of ["start", "modes", "schedule", "example", "editing", "hiding", "controls", "undo", "troubleshooting", "requirements"]) {
+        const section = document.createElement("section");
+        const heading = document.createElement("h3");
+        const paragraph = document.createElement("p");
+        heading.textContent = t(`automation.help.${topic}.title`);
+        paragraph.textContent = t(`automation.help.${topic}.body`);
+        section.append(heading, paragraph);
+        body.append(section);
+    }
+    overlay.append(header, body);
+    overlay.addEventListener("keydown", event => {
+        if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); dismiss(); }
+        if (event.key === "Tab") {
+            event.preventDefault();
+            (document.activeElement === close ? body : close).focus();
+        }
+    });
+    modal.append(overlay);
+    close.focus();
 }
 
 function updateOptions() {
