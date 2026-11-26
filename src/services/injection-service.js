@@ -10,32 +10,35 @@ import { getSettings } from "../state/settings-store.js";
 import { getCumulativeSummary } from "../state/chat-segment-store.js";
 import { hasCharacterLayerAnchor } from "./injection-compatibility.js";
 import { getAutomaticInjectionDepth } from "./range-state-service.js";
+import { getChatMessages, getSafeContext } from "../core/context.js";
+import { listApprovedRanges } from "../state/chat-segment-store.js";
+import { calculateAutomaticInjectionDepth } from "./injection-depth-calculator.js";
+import { isMessageExcludedFromContext } from "./chat-visibility.js";
+import { IGNORE_SYMBOL } from "/scripts/constants.js";
+
+export function getInjectionReadiness({ messages = getChatMessages(), ranges = listApprovedRanges() } = {}) {
+    const settings = getSettings();
+    if (!settings.autoInjectApproved) return { ready: false, reason: "injection-disabled" };
+    const position = settings.injectionPosition ?? extension_prompt_types.IN_PROMPT;
+    if (position === extension_prompt_types.IN_PROMPT && !isCharacterLayerAvailable()) {
+        return { ready: false, reason: "injection-unavailable" };
+    }
+    const text = buildApprovedSummaryInjectionText(getCumulativeSummary(), settings);
+    if (!text) return { ready: false, reason: "injection-empty" };
+    const depth = position === extension_prompt_types.IN_CHAT && settings.injectionDepthMode === "auto"
+        ? calculateAutomaticInjectionDepth(messages.map(m => isMessageExcludedFromContext(m, IGNORE_SYMBOL)), ranges)
+        : settings.injectionDepth ?? 1;
+    return depth === null ? { ready: false, reason: "injection-boundary" } : { ready: true, text, position, depth };
+}
 
 export async function syncInjectionPrompt() {
     const settings = getSettings();
-
-    if (!settings.autoInjectApproved) {
+    const status = getInjectionReadiness();
+    if (!status.ready) {
         clearInjectionPrompt();
-        return;
+        return status;
     }
-
-    const position = settings.injectionPosition ?? extension_prompt_types.IN_PROMPT;
-    if (position === extension_prompt_types.IN_PROMPT && !isCharacterLayerAvailable()) {
-        clearInjectionPrompt();
-        return;
-    }
-
-    let text = buildApprovedSummaryInjectionText(getCumulativeSummary(), settings);
-    if (!text) {
-        clearInjectionPrompt();
-        return;
-    }
-
-    const depth = getEffectiveInjectionDepth(settings, position);
-    if (depth === null) {
-        clearInjectionPrompt();
-        return;
-    }
+    const { text, position, depth } = status;
     const role = settings.injectionRole ?? extension_prompt_roles.SYSTEM;
 
     setExtensionPrompt(
@@ -46,6 +49,8 @@ export async function syncInjectionPrompt() {
         false,
         role,
     );
+    const registered = getSafeContext().extensionPrompts?.[EXTENSION_PROMPT_KEY];
+    return registered?.value === text ? status : { ready: false, reason: "injection-unavailable" };
 }
 
 export function isCharacterLayerAvailable() {

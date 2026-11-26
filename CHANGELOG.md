@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- Optional per-chat automation with draft review or automatic adoption, configurable batch size and a recent-message reserve. New chats remain semi-automatic; automatic generation currently requires an independent API and browser Web Locks.
+- Separate opt-in source hiding after verified summary persistence, interrupted-operation reconciliation, and conditional undo of the latest automatic adoption.
+- Same-origin tab coordination, chat-scoped pending drafts, and localized task status and pause controls.
+
+### Fixed
+
+- Source fingerprints now distinguish text/swipe changes from visibility changes and normalize the host's implicit original swipe. Legacy fingerprints are migrated only after verification.
+- Manual summary operations coordinate with automatic tasks, preserve unsaved editor text during refreshes, and reject results belonging to another chat.
+
 ## [1.3.0] - 2026-09-04
 
 ### Added

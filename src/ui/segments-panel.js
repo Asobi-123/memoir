@@ -1,4 +1,4 @@
-import { t } from "../i18n.js";
+import { t, translateOperationError } from "../i18n.js";
 import { debounce, notify } from "../utils.js";
 import {
     clearAllApprovedSummaries,
@@ -12,6 +12,8 @@ import { getApprovedSummaryTokenStats } from "../services/summary-token-service.
 import { refreshStatusPanel } from "./status-panel.js";
 import { refreshInjectionDepthControl } from "./injection-depth-control.js";
 import { enhanceAllTextareas } from "./panel.js";
+import { getCurrentChatKey } from "../core/context.js";
+import { getAutomationRuntime, withManualOperation } from "../services/automation-service.js";
 import {
     describeTokenStats,
     formatTokenValue,
@@ -22,16 +24,34 @@ let fuseSelection = { start: "", end: "" };
 let lastSearchText = "";
 let lastSearchPos = -1;
 let tokenRenderVersion = 0;
+let renderedChatKey = "";
+let renderedFusing = false;
+const unsavedEditors = new Map();
+
+export function hasUnsavedSummaryEdits() {
+    const textarea = document.getElementById("cc-cumulative-summary");
+    return Boolean(document.querySelector(".cc-fs-overlay") || (renderedChatKey === getCurrentChatKey() && textarea &&
+        (textarea.value !== getCumulativeSummary() || document.activeElement === textarea)));
+}
 
 export function refreshSegmentsPanel() {
     const root = document.getElementById("cc-segment-list");
     if (!root) return;
     const activeTextarea = root.querySelector("#cc-cumulative-summary");
-    if (activeTextarea && document.activeElement === activeTextarea) return;
+    const chatKey = getCurrentChatKey();
+    if (activeTextarea && activeTextarea.value !== activeTextarea.dataset.savedValue) {
+        unsavedEditors.set(renderedChatKey, activeTextarea.value);
+        if (renderedChatKey === chatKey) return;
+    }
+    if (renderedChatKey === chatKey && (document.querySelector(".cc-fs-overlay") ||
+        (activeTextarea && document.activeElement === activeTextarea))) return;
     const activeSearch = root.querySelector("#cc-summary-search");
-    if (activeSearch && document.activeElement === activeSearch) return;
+    if (renderedChatKey === chatKey && activeSearch && document.activeElement === activeSearch) return;
 
     const summary = getCumulativeSummary();
+    if (activeTextarea && renderedChatKey === chatKey && activeTextarea.dataset.savedValue === summary && renderedFusing === isFusing) return;
+    renderedFusing = isFusing;
+    renderedChatKey = chatKey;
     root.innerHTML = `
       <div class="cc-hint" style="margin-bottom:12px">${esc(t("segments.desc"))}</div>
       <div class="cc-card">
@@ -65,6 +85,9 @@ export function refreshSegmentsPanel() {
         <button class="cc-btn cc-btn-accent" id="cc-cumulative-fuse" ${isFusing ? "disabled" : ""}>${esc(isFusing ? t("segments.fusing") : t("segments.fuse"))}</button>
         <button class="cc-btn" id="cc-cumulative-clear">${esc(t("segments.clear"))}</button>
       </div>`;
+    const textarea = root.querySelector("#cc-cumulative-summary");
+    textarea.dataset.savedValue = summary;
+    if (unsavedEditors.has(chatKey)) textarea.value = unsavedEditors.get(chatKey);
     bindActions(root);
     bindSearch(root);
     enhanceAllTextareas();
@@ -76,25 +99,38 @@ function bindActions(root) {
 
     root.querySelector("#cc-cumulative-save")?.addEventListener("click", async () => {
         if (!(ta instanceof HTMLTextAreaElement)) return;
+        try { await withManualOperation(async () => {
         saveCumulativeSummary(ta.value); await syncInjectionPrompt(); refreshInjectionDepthControl(); refreshStatusPanel();
+        ta.dataset.savedValue = ta.value; unsavedEditors.delete(getCurrentChatKey());
         void renderTokenStats(root, ta.value);
         notify("success", t("toast.cumulativeSaved"));
+        }, { invalidate: true }); } catch (e) { notify("error", translateOperationError(e)); }
     });
     root.querySelector("#cc-cumulative-reset")?.addEventListener("click", async () => {
+        try { await withManualOperation(async () => {
         const bl = getApprovedBaselineSummary();
         if (ta instanceof HTMLTextAreaElement) ta.value = bl;
         saveCumulativeSummary(bl); await syncInjectionPrompt(); refreshInjectionDepthControl(); refreshStatusPanel();
+        ta.dataset.savedValue = bl; unsavedEditors.delete(getCurrentChatKey());
         void renderTokenStats(root, bl);
         notify("info", t("toast.cumulativeReset"));
+        }, { invalidate: true }); } catch (e) { notify("error", translateOperationError(e)); }
     });
     root.querySelector("#cc-cumulative-clear")?.addEventListener("click", async () => {
         if (!globalThis.confirm?.(t("toast.confirmClearAll"))) return;
+        try { await withManualOperation(async () => {
+        if (getAutomationRuntime()?.state().journal?.hiddenIndexes?.some(index =>
+            getAutomationRuntime().host.context().chat[index]?.is_system)) throw Object.assign(new Error("hidden-history"), { code: "hidden-history" });
         clearAllApprovedSummaries(); await syncInjectionPrompt(); refreshInjectionDepthControl(); refreshStatusPanel(); refreshSegmentsPanel();
+        unsavedEditors.delete(getCurrentChatKey());
+        ta.value = ""; ta.dataset.savedValue = ""; refreshSegmentsPanel();
         notify("warning", t("toast.cumulativeCleared"));
+        }, { invalidate: true }); } catch (e) { notify("error", translateOperationError(e)); }
     });
     root.querySelector("#cc-cumulative-fuse")?.addEventListener("click", async () => {
         if (isFusing) return;
         try {
+            await withManualOperation(async () => {
             const si = Number(root.querySelector("#cc-fuse-start")?.value || 0);
             const ei = Number(root.querySelector("#cc-fuse-end")?.value || 0);
             fuseSelection = { start: si > 0 ? String(si) : "", end: ei > 0 ? String(ei) : "" };
@@ -108,7 +144,8 @@ function bindActions(root) {
             } else {
                 notify("success", t("toast.fusionDone"));
             }
-        } catch (e) { notify("error", e.message); } finally { isFusing = false; refreshSegmentsPanel(); }
+            }, { invalidate: true });
+        } catch (e) { notify("error", translateOperationError(e)); } finally { isFusing = false; refreshSegmentsPanel(); }
     });
 }
 
@@ -122,7 +159,14 @@ function bindTokenStats(root, textarea) {
     }, 180);
 
     void renderTokenStats(root, textarea.value);
-    textarea.addEventListener("input", () => debouncedRender(textarea.value));
+    textarea.addEventListener("input", () => {
+        unsavedEditors.set(getCurrentChatKey(), textarea.value);
+        const runtime = getAutomationRuntime();
+        if (runtime && runtime.state().mode !== "manual") {
+            runtime.cancel(); runtime.state().paused = true; runtime.state().reason = "manual-operation";
+        }
+        debouncedRender(textarea.value);
+    });
 }
 
 function bindSearch(root) {

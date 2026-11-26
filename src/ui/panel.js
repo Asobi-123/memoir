@@ -86,6 +86,11 @@ function modalHtml() {
         <div class="cc-body">${workspacePage()}${summaryPage()}${settingsPage()}</div></div>`;
 }
 function workspacePage(){return `<section class="cc-page active" data-cc-page="workspace">
+    <div class="cc-card" id="cc-automation-status" aria-live="polite">
+        <div class="cc-card-head"><strong>${t("automation.title")}</strong><span id="cc-automation-state"></span></div>
+        <div id="cc-automation-next" class="cc-hint"></div><div id="cc-automation-reason" class="cc-hint"></div>
+        <div class="cc-actions"><button id="cc-automation-pause" class="cc-btn">${t("automation.pause")}</button><button id="cc-automation-resume" class="cc-btn">${t("automation.resume")}</button><button id="cc-automation-recover" class="cc-btn">${t("automation.recover")}</button><button id="cc-automation-undo" class="cc-btn">${t("automation.undo")}</button></div>
+    </div>
     <div class="cc-card"><div class="cc-g3">
         <label class="cc-field"><span>${t("workspace.rangeStart")}</span><input id="cc-range-start" class="cc-input" type="number" min="1" step="1"></label>
         <label class="cc-field"><span>${t("workspace.rangeEnd")}</span><input id="cc-range-end" class="cc-input" type="number" min="1" step="1"></label>
@@ -152,6 +157,21 @@ function settingsPage(){
         return `<button class="cc-theme-btn${currentThemeId===id?" active":""}" data-theme="${id}"><span class="cc-theme-swatch" style="${sw}"></span><span class="cc-theme-label">${label}</span></button>`;
     }).join("");
     return `<section class="cc-page" data-cc-page="settings">
+    <div class="cc-card cc-collapsible" id="cc-automation-settings">
+        <button type="button" id="cc-automation-toggle" class="cc-card-head cc-collapse-toggle" aria-expanded="true" aria-controls="cc-automation-body"><strong>${t("automation.title")}</strong><i class="fa-solid fa-chevron-down cc-collapse-icon"></i></button>
+        <div class="cc-collapse-body" id="cc-automation-body">
+            <div class="cc-hint">${t("automation.scope")}</div>
+            <label class="cc-field"><span>${t("automation.mode")}</span><select id="cc-automation-mode" class="cc-input"><option value="manual">${t("automation.mode.manual")}</option><option value="draft">${t("automation.mode.draft")}</option><option value="auto-approve">${t("automation.mode.auto-approve")}</option></select></label>
+            <div id="cc-automation-options" class="cc-g2">
+                <label class="cc-field"><span>${t("automation.batchSize")}</span><input id="cc-automation-batch" class="cc-input" type="number" min="1" step="1" required></label>
+                <label class="cc-field"><span>${t("automation.keepRecent")}</span><input id="cc-automation-keep" class="cc-input" type="number" min="1" step="1" required></label>
+            </div>
+            <label class="cc-field-row" id="cc-automation-hide-row"><input id="cc-automation-hide" type="checkbox"><span>${t("automation.hide")}</span></label>
+            <div id="cc-automation-profile" class="cc-hint"></div>
+            <div class="cc-hint">${t("automation.hint")}</div>
+            <div class="cc-actions"><button id="cc-automation-save" class="cc-btn cc-btn-accent">${t("automation.save")}</button></div>
+        </div>
+    </div>
     <div class="cc-card"><div class="cc-card-head"><strong>主题</strong></div><div class="cc-theme-grid">${tb}</div></div>
     <div class="cc-card cc-collapsible">
         <div class="cc-card-head cc-collapse-toggle"><strong>API</strong><i class="fa-solid fa-chevron-down cc-collapse-icon"></i></div>
@@ -504,6 +524,8 @@ const CSS = `
 /* Card */
 .cc-card{border:1px solid color-mix(in srgb,var(--cc-border) 45%,transparent);border-radius:14px;background:color-mix(in srgb,var(--cc-surface) 50%,transparent);padding:14px}
 .cc-card+.cc-card{margin-top:10px}.cc-card-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}.cc-card-head strong{font-size:14px}
+#cc-automation-options{margin-top:10px}#cc-automation-hide-row{margin-top:10px}#cc-automation-profile{overflow-wrap:anywhere;margin-top:10px}#cc-automation-status{margin-bottom:10px}#cc-automation-reason:empty{display:none}.cc-modal [hidden]{display:none!important}
+#cc-automation-toggle{width:100%;min-height:36px;color:var(--cc-text);background:none;border:0;padding:0;text-align:start}
 
 /* Collapsible cards */
 .cc-collapse-toggle{cursor:pointer;user-select:none}

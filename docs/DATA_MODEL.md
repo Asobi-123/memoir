@@ -92,14 +92,16 @@ Each entry in `approvedRanges`:
   "startMes": 0,
   "endMes": 19,
   "sourceHash": "sha256...",
+  "hashVersion": 2,
+  "taskId": null,
   "changed": false,
   "approvedAt": 0
 }
 ```
 
-## Draft Shape (runtime only, not persisted)
+## Draft Shape
 
-Drafts are provider outputs that have not been approved yet.
+Drafts are provider outputs that have not been approved yet. Manual drafts are runtime-only and carry a stable `chatKey`. Automatic drafts persist a compact subset under the chat's automation state; API requests, credentials and raw source-message copies are not persisted there.
 
 ```json
 {
@@ -164,3 +166,33 @@ Stored inside:
 Approved ranges have a `changed` boolean flag. When source messages are edited and
 the hash no longer matches `sourceHash`, the flag is set to `true`. The summary
 continues to be usable (soft detection, not hard disable).
+
+Hash version 2 covers message role, speaker, text and selected swipe, excluding visibility. Missing `hashVersion` means the original algorithm, including `is_system`. A legacy record is migrated only when its existing hash verifies; mismatches remain changed rather than being silently re-baselined. Automatic adoption stops for changed or unverified ranges.
+
+## Per-chat Automation
+
+`chat_metadata.extensions.chat_compactor.automation`:
+
+```json
+{
+  "schemaVersion": 1,
+  "ownerChatKey": "[\"character\",\"avatar.png\",\"chat-file\"]",
+  "mode": "manual",
+  "batchSize": 20,
+  "keepRecent": 10,
+  "hideAfterApprove": false,
+  "paused": false,
+  "status": "idle",
+  "reason": "",
+  "pending": null,
+  "journal": null
+}
+```
+
+Modes are `manual`, `draft` and `auto-approve`. Positive integer batch/reserve values are required. A different owner key (including a copied/branched chat) resets automation permissions and execution records. An unknown schema disables automation without overwriting the unknown record.
+
+`pending` stores the draft ID, owner key, range, hash/version, visibility-only mask, summary text and a small provider-status projection. It contains no request or API configuration. A pending result blocks another automatic batch until reviewed or discarded.
+
+`journal` stores `taskId`, owner, range, source hash/version, compact draft, summary/range snapshots before and after adoption, indexes newly hidden by this transaction, and its phase. The latest journal replaces the previous undo point. Approved ranges carry the matching task ID for idempotency.
+
+Phases include `committing`, `saved`, `hiding`, `restoring`, `completed`, `undoing`, `originals-restored`, `undone` and `invalidated`. Unconfirmed terminal saves retain a nonterminal phase for reconciliation. Recovery never generates a new summary or repeats an append. UI status and a model response alone are not evidence of durable adoption; fixed-target readback confirms it.

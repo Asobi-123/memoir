@@ -12,12 +12,13 @@ export async function sha256(input) {
     return sha256Fallback(bytes);
 }
 
-export async function hashMessageRange(messages) {
+export async function hashMessageRange(messages, version = 2) {
     const payload = (messages || []).map((message) => ({
         is_user: !!message.is_user,
-        is_system: !!message.is_system,
+        ...(version === 1 ? { is_system: !!message.is_system } : {}),
         name: message.name || "",
         mes: message.mes || "",
+        ...(version === 1 ? {} : { swipe_id: message.swipe_id ?? 0 }),
     }));
 
     return sha256(payload);

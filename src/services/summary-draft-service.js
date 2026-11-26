@@ -1,4 +1,4 @@
-import { getChatRange } from "../core/context.js";
+import { getChatRange, getCurrentChatKey } from "../core/context.js";
 import { getSettings } from "../state/settings-store.js";
 import { buildPromptBundle } from "../prompts/prompt-registry.js";
 import { runSummaryProvider } from "./provider-router.js";
@@ -6,9 +6,10 @@ import { hashMessageRange } from "./segment-hash-service.js";
 
 const RECOVERY_MIN_RESPONSE_LENGTH = 600;
 
-export async function generateDraftForRange({ startMes, endMes }) {
-    const settings = getSettings();
-    const messages = getChatRange(startMes, endMes);
+export async function generateDraftForRange({ startMes, endMes, settings: suppliedSettings, signal, automatic = false }) {
+    const chatKey = getCurrentChatKey();
+    const settings = structuredClone(suppliedSettings || getSettings());
+    const messages = structuredClone(getChatRange(startMes, endMes));
 
     if (!messages.length) {
         throw new Error("No messages found in the selected range.");
@@ -47,7 +48,8 @@ export async function generateDraftForRange({ startMes, endMes }) {
     let localFallbackReason = "";
 
     try {
-        response = await runSummaryProvider(providerRequest, settings);
+        signal?.throwIfAborted();
+        response = await runSummaryProvider(providerRequest, settings, { signal, automatic });
     } catch (error) {
         if (!shouldRetrySummaryFailure(error)) {
             throw error;
@@ -77,7 +79,8 @@ export async function generateDraftForRange({ startMes, endMes }) {
         emptyRetryUsed = true;
 
         try {
-            response = await runSummaryProvider(providerRequest, settings);
+            signal?.throwIfAborted();
+            response = await runSummaryProvider(providerRequest, settings, { signal, automatic });
         } catch (error) {
             if (!shouldRetrySummaryFailure(error)) {
                 throw error;
@@ -116,7 +119,9 @@ export async function generateDraftForRange({ startMes, endMes }) {
             : response.providerModel || "";
 
     return {
-        id: `draft_${Date.now()}`,
+        id: `draft_${globalThis.crypto?.randomUUID?.() || `${Date.now()}_${Math.random().toString(36).slice(2)}`}`,
+        chatKey,
+        hashVersion: 2,
         range: { startMes, endMes, startFloor, endFloor },
         sourceHash,
         request: providerRequest,

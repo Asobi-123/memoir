@@ -1,17 +1,25 @@
 import { eventSource, event_types } from "/script.js";
+import * as hostCore from "/script.js";
+import * as hostChats from "/scripts/chats.js";
 import { initializeI18n } from "../i18n.js";
-import { loadSettings } from "../state/settings-store.js";
+import { loadSettings, getSettings } from "../state/settings-store.js";
 import { buildAndMountPanel } from "../ui/panel.js";
 import { mountSettingsUi, refreshInjectionCompatibility } from "../ui/settings-ui.js";
 import { refreshInjectionDepthControl } from "../ui/injection-depth-control.js";
-import { syncInjectionPrompt } from "../services/injection-service.js";
+import { syncInjectionPrompt, getInjectionReadiness } from "../services/injection-service.js";
 import { syncSegmentStaleState } from "../services/stale-detection-service.js";
 import { refreshStatusPanel } from "../ui/status-panel.js";
 import { refreshSegmentsPanel } from "../ui/segments-panel.js";
 import { registerLauncher } from "../ui/launcher.js";
 import { fillSuggestedDraftRange } from "../ui/draft-panel.js";
-import { getChatMessages } from "./context.js";
+import { getChatMessages, getSafeContext, ensureChatStore } from "./context.js";
 import { debounce } from "../utils.js";
+import { createAutomationHost } from "../services/automation-host-adapter.js";
+import { createAutomationService, createAutomationActions, setAutomationRuntime } from "../services/automation-service.js";
+import { generateDraftForRange } from "../services/summary-draft-service.js";
+import { getCurrentDraft } from "../services/approval-service.js";
+import { hasUnsavedSummaryEdits } from "../ui/segments-panel.js";
+import { mountAutomationUi, refreshAutomationUi } from "../ui/automation-ui.js";
 
 let initialized = false;
 let hiddenMessageObserver = null;
@@ -19,6 +27,7 @@ let observedChatRoot = null;
 let hiddenStateRefreshQueued = false;
 let chatVisibilityMonitor = null;
 let lastChatVisibilitySignature = "";
+let automation = null;
 
 export async function initializeApp() {
     if (initialized) {
@@ -29,7 +38,17 @@ export async function initializeApp() {
     loadSettings();
     buildAndMountPanel();
     await registerLauncher();
-    mountSettingsUi();
+    await mountSettingsUi();
+    const host = createAutomationHost({ getContext: getSafeContext, isGenerating: hostCore.isGenerating,
+        hideRange: hostChats.hideChatMessageRange });
+    const actions = createAutomationActions({ host, getStore: ensureChatStore, getSettings,
+        generate: generateDraftForRange, syncInjection: syncInjectionPrompt,
+        canInject: getInjectionReadiness, isEditing: hasUnsavedSummaryEdits });
+    automation = createAutomationService({ host, getStore: ensureChatStore, getSettings,
+        hasDraft: getCurrentDraft, isEditing: hasUnsavedSummaryEdits, onChange: refreshAutomationUi,
+        processRange: actions.processRange, actions, ignoreSymbol: Symbol.for("ignore") });
+    setAutomationRuntime(automation);
+    mountAutomationUi(automation);
     registerEventHandlers();
 
     await syncInjectionPrompt();
@@ -41,6 +60,20 @@ export async function initializeApp() {
 }
 
 function registerEventHandlers() {
+    eventSource.on(event_types.CHAT_CHANGED, () => { automation.chatChanged(); refreshAutomationUi(true); });
+    for (const type of [event_types.MESSAGE_SENT, event_types.MESSAGE_UPDATED, event_types.MESSAGE_DELETED,
+        event_types.MESSAGE_SWIPED, event_types.GENERATION_STOPPED]) {
+        eventSource.on(type, () => automation.cancel());
+    }
+    eventSource.on(event_types.GENERATION_STARTED, (_type, _options, dryRun) => { if (!dryRun) automation.cancel(); });
+    eventSource.on(event_types.MESSAGE_RECEIVED, (index, type) => {
+        const message = getChatMessages()[index];
+        if (["normal", "continue", "swipe", "regenerate"].includes(type) && message &&
+            !message.is_user && !message.is_system && String(message.mes || "").trim()) {
+            automation.schedule(`${automation.host.identity()?.key}:${index}:${message.swipe_id ?? 0}:${message.mes}`);
+        }
+    });
+    globalThis.addEventListener("pagehide", () => automation.dispose());
     const debouncedChatChanged = debounce(handleChatChanged, 300);
     eventSource.on(event_types.CHAT_CHANGED, debouncedChatChanged);
     eventSource.on(event_types.MESSAGE_DELETED, debouncedChatChanged);
@@ -131,4 +164,5 @@ async function handleChatChanged() {
     refreshStatusPanel();
     refreshSegmentsPanel();
     fillSuggestedDraftRange();
+    refreshAutomationUi();
 }

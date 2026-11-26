@@ -1,5 +1,6 @@
 import { getContext } from "/scripts/extensions.js";
 import { EXTENSION_ID, CHAT_STORE_VERSION } from "../constants.js";
+import { getChatIdentity } from "../services/automation-host-adapter.js";
 
 export function getSafeContext() {
     return getContext();
@@ -13,6 +14,10 @@ export function getChatMessages() {
 export function getCurrentChatId() {
     const context = getSafeContext();
     return context.chatId || context.getCurrentChatId?.() || "";
+}
+
+export function getCurrentChatKey() {
+    return getChatIdentity(getSafeContext())?.key || "";
 }
 
 export function ensureChatStore() {

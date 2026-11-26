@@ -2,7 +2,7 @@
 
 ## Overview
 
-Memoir (古法 Memoir) is a third-party SillyTavern extension that provides controllable chat memory management with human review before any content is injected into the conversation context.
+Memoir (古法 Memoir) is a third-party SillyTavern extension for controllable chat memory management. Human review is the default. A chat can explicitly opt into automatic draft generation or adoption, and separately authorize hiding saved source ranges.
 
 ## V1 Flow
 
@@ -59,6 +59,20 @@ Memoir (古法 Memoir) is a third-party SillyTavern extension that provides cont
 ```
 
 ## Key Design Decisions
+
+### Optional automation
+
+`automation-policy.js` selects the earliest complete uncovered batch outside the recent-message reserve. It never uses the manual range suggestion's tail fallback. A complete reply schedules one check; the coordinator waits for host idleness, and never recursively drains history.
+
+`automation-service.js` coordinates generation, validation, adoption, visibility and undo through a dependency-injected host adapter. Chat keys include the character avatar or group identity and chat file. An epoch invalidates asynchronous work on chat switches. Per-chat metadata holds normalized rules, one compact pending result and one recent transaction journal. Manual drafts remain in memory, isolated by chat key.
+
+Automatic requests currently require an independent API: the verified shared `generateRaw` path has global cancellation and temporary parameter behavior that cannot be safely isolated. Independent requests capture saved settings and use request-local abort controllers. They never silently fall back to the shared API in automatic mode.
+
+Native saves may swallow errors. The adapter reads the captured single/group chat file back and verifies the summary, task ID and expected stage before allowing hiding. Hiding is an independent opt-in, checks projected injection readiness and uses the host's native visibility operation. Interrupted hiding restores source visibility while retaining the saved summary. Undo restores and verifies source visibility before restoring summary data.
+
+Web Locks coordinate Memoir operations in same-origin tabs. A locked task checks saved state before proceeding; stale tabs cannot overwrite a newer summary. This is not a server transaction or a cross-device lock, and cannot coordinate arbitrary external writers. Unsupported lock/host capabilities leave semi-automatic operation available.
+
+Source hash version 2 excludes visibility and includes the selected swipe. Legacy hashes are upgraded only after matching the legacy algorithm. A visibility-only change therefore does not mark a newly approved source range as edited.
 
 ### Self-contained i18n
 Fetches its own locale JSON files instead of using SillyTavern's `context.translate`. Avoids namespace collision with other extensions.

@@ -27,6 +27,7 @@ AI "remembers" past plot on its next reply
 ## Features
 
 - **Manual segment summarization** — You choose the range, you confirm. No automatic chat deletion.
+- **Optional automation** — Enable draft generation or automatic adoption for this chat, with configurable batch size and recent messages to retain. Hiding is a separate opt-in. Pause and undo the last automatic adoption; new chats remain semi-automatic.
 - **Summary presets + style/fanfic/mature-content compatibility templates** — Built-in story archive preset with stackable style templates, fanfic AU compatibility, and a mature-content archive compatibility patch. All template text is fully viewable and editable, and you can swap in your own preferred summary template.
 - **Empty-response recovery** — Summary generation and Merge & Compress automatically retry when the provider returns an empty response. If no usable result is returned, Memoir keeps editable fallback text instead of interrupting the workflow.
 - **Merge & Compress** — Too many summaries piling up? One-click fusion to deduplicate and consolidate. If the provider keeps returning empty output, Memoir preserves the selected source summaries as manual-revision text.
@@ -76,6 +77,16 @@ Refresh SillyTavern to start using.
 - In the `Summary User Template`, keep `{{start_floor}}`, `{{end_floor}}`, and `{{chat_history}}`. Everything else can be changed.
 
 ---
+
+### Optional Automation
+
+Open **Settings → Automation**, choose this chat's mode, set a batch size and recent-message reserve, then save to check one batch. Future complete character replies schedule another check once the host is idle. Each message counts as one floor: with a batch of 20 and reserve of 10, floors 1–20 become eligible at 30 messages, then 21–40 at 50.
+
+Draft mode waits for your review and preserves its pending result across reloads. Automatic adoption saves usable results without review. Hiding is a separate opt-in and never deletes source text. The workspace offers pause/resume, interrupted-operation reconciliation and conditional undo of the last automatic adoption. Discarding a draft or performing manual edits pauses automation; later edits can invalidate undo.
+
+Automatic generation uses saved prompt/template settings and currently requires an independent API. The shared API remains available for semi-automatic generation, but its global cancellation and temporary parameters cannot safely isolate background work. Keep the page open and use a browser with Web Locks, generally on HTTPS or localhost.
+
+Fallback content, changed sources and unconfirmed saves do not authorize automatic hiding. Injection must also be enabled and compatible. Switching back to semi-automatic does not undo existing summaries or unhide messages. Same-origin tabs coordinate through browser locks; other devices and arbitrary external writers are outside that coordination.
 
 ## Related Docs
 

@@ -1,6 +1,25 @@
 # Manual Testing Checklist
 
 This checklist is for release validation before publishing a new Memoir version.
+## Optional automation acceptance
+
+Use disposable single and group chats with known fixture messages. Do not use an active story for visibility/undo tests. Record the host version and whether provider responses are fixtures or live model calls.
+
+1. Confirm new and copied chats default to semi-automatic without an API call.
+2. With batch 20/reserve 10, check thresholds at 29, 30, 49 and 50 messages. Already covered ranges must not be summarized again.
+3. Generate an automatic draft, wait for saving to finish, reload and approve it. Human approval must not hide source messages. Discard a second draft and confirm automation pauses.
+4. Enable automatic adoption and hiding with usable injection. Confirm persisted summary/task ID before hidden flags change. Check actual outgoing prompt assembly: the summary and recent source messages are present; hidden originals are absent. Verify automatic depth after new replies.
+5. Undo after appending new tail messages. Source visibility must be restored before the summary disappears. Editing or fusion must prevent an old undo snapshot from overwriting newer text.
+6. Force empty provider responses twice. The fallback remains reviewable, with no automatic adoption or hiding. Test a provider error and cancellation without repeated requests.
+7. Fail a native chat save while allowing readback. A resolved native saver must not produce success. Restore connectivity, reconcile, then confirm no duplicate adoption or hidden source without its summary.
+8. Open two same-origin pages. Hold one summary request; the second must be blocked by the lock. Once the first commits, the old page must not overwrite its result. Check unavailable Web Locks and unsupported state versions fail closed.
+9. Change chats, edit/swipe/delete sources and change saved settings during generation. Results must not be committed into another chat or an invalid source range. Check unsaved and fullscreen summary edits survive background UI refreshes.
+10. Test normal and streamed replies in a group with multiple members. No summary may run between members while the group is still generating. Verify group save/readback independently of single chats.
+11. Confirm disabled/incompatible injection or an invalid automatic boundary blocks hiding. Check manual-depth and automatic-depth configurations separately.
+12. Check English/Chinese, keyboard controls, narrow width and a short viewport. No new page exceptions, duplicate controls, lost input or horizontal panel overflow.
+
+Simulation tests additionally cover save/undo intermediate phases and source-hash migration. Browser checks must exercise the actual host imports, visibility, persistence and request assembly; intercepted model responses do not validate model summary quality.
+
 
 ## Preconditions
 

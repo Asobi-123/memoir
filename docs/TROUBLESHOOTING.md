@@ -1,5 +1,17 @@
 # Troubleshooting
 
+## Automatic tasks pause or do not start
+
+- New chats default to semi-automatic. Save this chat's automation rules explicitly; the global settings save does not enable them.
+- Automatic generation currently needs a complete independent API configuration. Shared API remains available for manual generation; automatic tasks do not silently change providers.
+- Keep the page open. Web Locks must be available, generally on HTTPS or localhost. Insecure LAN HTTP may lack this browser capability.
+- There must be a full uncovered batch before the recent-message reserve. Existing drafts, small earlier gaps, changed source ranges, unsaved summary edits and manual operations stop a new batch.
+- A local empty-response fallback is for manual revision, not automatic adoption. Review or discard it; discard pauses the chat to prevent repeated requests for the same range.
+- If saving cannot be confirmed, use the workspace's interrupted-operation reconciliation. Do not repeatedly generate the same range. Recovery checks persisted state and preserves source messages and saved summaries.
+- Another tab may hold the operation lock. A stale tab must reload before editing newer saved data. This coordination does not cover other devices or other extensions writing the same chat.
+- Hiding also requires enabled, usable injection. Automatic chat depth must have a provable contiguous boundary; a missing character-layer anchor or disabled injection blocks hiding.
+- Undo applies only to the most recent automatic adoption whose summary and source still match. Subsequent editing or fusion can invalidate it. Switching to semi-automatic does not undo prior changes.
+
 This guide covers the most common setup and runtime issues for Memoir.
 
 ## Summary Generation Fails

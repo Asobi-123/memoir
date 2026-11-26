@@ -12,8 +12,7 @@ export function abortCurrentGeneration() {
     }
 }
 
-export async function runCustomSummaryProvider(request) {
-    const settings = getSettings();
+export async function runCustomSummaryProvider(request, { settings = getSettings(), signal } = {}) {
     const { apiUrl, apiKey, model } = settings.independentApiConfig;
     const maxTokens = Number(request.maxTokens);
 
@@ -21,9 +20,15 @@ export async function runCustomSummaryProvider(request) {
         throw new Error("Custom provider requires API URL and model.");
     }
 
-    abortCurrentGeneration();
-    activeController = new AbortController();
-    const timeout = setTimeout(() => activeController?.abort(), REQUEST_TIMEOUT_MS);
+    const controller = new AbortController();
+    const abort = () => controller.abort(signal.reason);
+    if (signal?.aborted) abort();
+    signal?.addEventListener("abort", abort, { once: true });
+    if (!signal) {
+        abortCurrentGeneration();
+        activeController = controller;
+    }
+    const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
     try {
         const response = await fetch(normalizeChatCompletionsUrl(apiUrl), {
@@ -42,7 +47,7 @@ export async function runCustomSummaryProvider(request) {
                 temperature: 0.2,
                 stream: false,
             }),
-            signal: activeController.signal,
+            signal: controller.signal,
         });
 
         if (!response.ok) {
@@ -64,7 +69,8 @@ export async function runCustomSummaryProvider(request) {
         };
     } finally {
         clearTimeout(timeout);
-        activeController = null;
+        signal?.removeEventListener("abort", abort);
+        if (activeController === controller) activeController = null;
     }
 }
 

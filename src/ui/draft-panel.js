@@ -1,4 +1,4 @@
-import { t } from "../i18n.js";
+import { t, translateOperationError } from "../i18n.js";
 import { normalizeNonNegativeInteger, notify } from "../utils.js";
 import { generateDraftForRange } from "../services/summary-draft-service.js";
 import { getDraft, saveDraftSegment } from "../state/chat-segment-store.js";
@@ -10,6 +10,8 @@ import { refreshInjectionDepthControl } from "./injection-depth-control.js";
 import { getSettings, updateIndependentApiConfig, updateSettings } from "../state/settings-store.js";
 import { getSuggestedDraftRange } from "../services/range-suggestion-service.js";
 import { normalizeContentCompatibilityPatchText } from "../prompts/prompt-registry.js";
+import { getAutomationRuntime, withManualOperation } from "../services/automation-service.js";
+import { getCurrentChatKey } from "../core/context.js";
 
 let currentDraftId = null;
 
@@ -36,49 +38,66 @@ export function bindDraftPanel() {
         preview.textContent = t("workspace.generating");
 
         try {
-            syncGenerationSettingsFromForm();
-            const draft = await generateDraftForRange({
-                startMes: startFloor - 1,
-                endMes: endFloor - 1,
+            await withManualOperation(async (target) => {
+                syncGenerationSettingsFromForm();
+                const draft = await generateDraftForRange({
+                    startMes: startFloor - 1,
+                    endMes: endFloor - 1,
+                });
+                if (target && getCurrentChatKey() !== target.key) throw new Error("chat-changed");
+                saveDraftSegment(draft);
+                currentDraftId = draft.id;
+                renderDraftPreview(draft);
+                refreshStatusPanel();
+                notify("success", t("toast.draftGenerated"));
             });
-
-            saveDraftSegment(draft);
-            currentDraftId = draft.id;
-            renderDraftPreview(draft);
-            refreshStatusPanel();
-            notify("success", t("toast.draftGenerated"));
         } catch (error) {
-            preview.textContent = `${t("draft.generateFailed")}\n${error.message}`;
-            notify("error", error.message);
+            preview.textContent = `${t("draft.generateFailed")}\n${translateOperationError(error)}`;
+            notify("error", translateOperationError(error));
         }
     });
 
     document.getElementById("cc-approve-draft")?.addEventListener("click", async () => {
         try {
-            const result = approveDraft(currentDraftId);
-            currentDraftId = null;
-            await syncInjectionPrompt();
-            refreshInjectionDepthControl();
-            renderApprovedSummaryPreview(result.cumulativeSummary);
-            refreshStatusPanel();
-            refreshSegmentsPanel();
-            fillSuggestedDraftRange();
-            notify("success", t("toast.draftApproved"));
+            await withManualOperation(async (target) => {
+                const draft = (currentDraftId && getDraft(currentDraftId)) || getCurrentDraft();
+                const result = draft?.origin === "automation"
+                    ? await getAutomationRuntime().actions.acceptPending(target)
+                    : await approveDraft(draft?.id);
+                currentDraftId = null;
+                await syncInjectionPrompt();
+                refreshInjectionDepthControl();
+                renderApprovedSummaryPreview(result.cumulativeSummary);
+                refreshStatusPanel();
+                refreshSegmentsPanel();
+                fillSuggestedDraftRange();
+                notify("success", t("toast.draftApproved"));
+            }, { invalidate: true });
         } catch (error) {
-            notify("error", error.message);
+            notify("error", translateOperationError(error));
         }
     });
 
-    document.getElementById("cc-reject-draft")?.addEventListener("click", () => {
+    document.getElementById("cc-reject-draft")?.addEventListener("click", async () => {
         try {
-            rejectDraft(currentDraftId);
-            currentDraftId = null;
-            renderCurrentDraft();
-            refreshStatusPanel();
-            fillSuggestedDraftRange();
-            notify("info", t("toast.draftRejected"));
+            await withManualOperation(async (target) => {
+                const draft = (currentDraftId && getDraft(currentDraftId)) || getCurrentDraft();
+                rejectDraft(draft?.id);
+                const runtime = getAutomationRuntime();
+                if (draft?.origin === "automation" && runtime) {
+                    runtime.state().paused = true;
+                    runtime.state().reason = "draft-discarded";
+                    runtime.state().status = "paused";
+                    await runtime.actions.saveState(target);
+                }
+                currentDraftId = null;
+                renderCurrentDraft();
+                refreshStatusPanel();
+                fillSuggestedDraftRange();
+                notify("info", t("toast.draftRejected"));
+            });
         } catch (error) {
-            notify("error", error.message);
+            notify("error", translateOperationError(error));
         }
     });
 
@@ -136,18 +155,22 @@ export function fillSuggestedDraftRange() {
     }
 }
 
-function renderCurrentDraft() {
+export function renderCurrentDraft() {
     const draft = currentDraftId ? getDraft(currentDraftId) : getCurrentDraft();
     const preview = document.getElementById("cc-draft-preview");
     if (!preview) {
         return;
     }
 
+    if (!draft && currentDraftId) {
+        currentDraftId = null;
+        return renderCurrentDraft();
+    }
     if (!draft) {
         preview.textContent = t("workspace.noDraft");
         return;
     }
-
+    currentDraftId = draft.id;
     renderDraftPreview(draft);
 }
 

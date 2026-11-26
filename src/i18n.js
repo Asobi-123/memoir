@@ -40,3 +40,9 @@ export function t(key, replacements) {
     }
     return result;
 }
+
+export function translateOperationError(error) {
+    const key = `automation.reason.${error.code || error.message}`;
+    const translated = t(key);
+    return translated === key ? error.message : translated;
+}

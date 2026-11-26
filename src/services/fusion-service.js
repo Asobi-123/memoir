@@ -1,5 +1,7 @@
 import { getSettings } from "../state/settings-store.js";
 import { DEFAULT_SETTINGS } from "../state/defaults.js";
+import { getChatRange, getCurrentChatKey } from "../core/context.js";
+import { hashMessageRange } from "./segment-hash-service.js";
 import {
     getCumulativeSummary,
     overwriteApprovedRanges,
@@ -14,6 +16,7 @@ import {
 const RECOVERY_MIN_RESPONSE_LENGTH = 800;
 
 export async function runFusionCompression({ startIndex = null, endIndex = null } = {}) {
+    const chatKey = getCurrentChatKey();
     const current = getCumulativeSummary().trim();
     if (!current) {
         throw new Error("当前没有可融合压缩的累计总结正文。");
@@ -126,6 +129,12 @@ export async function runFusionCompression({ startIndex = null, endIndex = null 
         approvedAt: Date.now(),
     }));
 
+    for (const range of rebuiltRanges) {
+        if (chatKey !== getCurrentChatKey()) throw new Error("chat-changed");
+        range.sourceHash = await hashMessageRange(getChatRange(range.startMes, range.endMes));
+        range.hashVersion = 2;
+    }
+    if (chatKey !== getCurrentChatKey() || current !== getCumulativeSummary().trim()) throw new Error("summary-changed");
     saveCumulativeSummary(finalText);
     overwriteApprovedRanges(rebuiltRanges, { updateBaseline: false });
     return {

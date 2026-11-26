@@ -1,10 +1,15 @@
 import { saveMetadataDebounced } from "/scripts/extensions.js";
-import { ensureChatStore } from "../core/context.js";
+import { ensureChatStore, getCurrentChatKey, getChatMessages } from "../core/context.js";
+import { ensureAutomation } from "./automation-store.js";
 
 const runtimeDrafts = [];
 
 export function listDrafts() {
-    return runtimeDrafts;
+    const key = getCurrentChatKey();
+    const drafts = runtimeDrafts.filter(draft => draft.chatKey === key);
+    const pending = ensureAutomation(ensureChatStore(), key).pending;
+    if (pending && !drafts.some(d => d.id === pending.id)) drafts.push(pending);
+    return drafts;
 }
 
 export function getDraft(draftId) {
@@ -18,6 +23,7 @@ export function getLatestActiveDraft() {
 }
 
 export function saveDraftSegment(draft) {
+    if (!draft.chatKey || draft.chatKey !== getCurrentChatKey()) throw new Error("chat-changed");
     const index = runtimeDrafts.findIndex((item) => item.id === draft.id);
 
     if (index === -1) {
@@ -37,6 +43,11 @@ export function updateDraftStatus(draftId, status) {
 
     draft.status = status;
     draft.updatedAt = Date.now();
+    const state = ensureAutomation(ensureChatStore(), getCurrentChatKey());
+    if (state.pending?.id === draft.id) {
+        state.pending = null;
+        saveMetadataDebounced();
+    }
     return draft;
 }
 
@@ -61,6 +72,7 @@ export function getApprovedBaselineSummary() {
 }
 
 export function saveCumulativeSummary(text) {
+    assertHistoryAvailable(text);
     const store = ensureChatStore();
     store.cumulativeSummary = String(text || "").trim();
     store.updatedAt = Date.now();
@@ -78,6 +90,7 @@ export function resetCumulativeSummaryToBaseline() {
 }
 
 export function clearAllApprovedSummaries() {
+    assertHistoryAvailable("");
     const store = ensureChatStore();
     store.cumulativeSummary = "";
     store.approvedBaselineSummary = "";
@@ -85,6 +98,15 @@ export function clearAllApprovedSummaries() {
     store.approvedBaselineRanges = [];
     store.updatedAt = Date.now();
     saveMetadataDebounced();
+}
+
+function assertHistoryAvailable(nextText) {
+    if (String(nextText || "").trim()) return;
+    const messages = getChatMessages();
+    if (listApprovedRanges().some(range => range.taskId &&
+        messages.slice(range.startMes, range.endMes + 1).some(message => message.is_system))) {
+        throw Object.assign(new Error("hidden-history"), { code: "hidden-history" });
+    }
 }
 
 export function listApprovedRanges() {
@@ -125,6 +147,7 @@ export function appendApprovedSummary(archiveSummary, rangeMeta) {
         startMes: rangeMeta.startMes,
         endMes: rangeMeta.endMes,
         sourceHash: rangeMeta.sourceHash,
+        hashVersion: rangeMeta.hashVersion || 2,
         changed: false,
         approvedAt: Date.now(),
     });
