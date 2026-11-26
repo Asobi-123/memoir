@@ -1,21 +1,21 @@
 # Memoir
 
-[中文](README.md)
+[中文](README.md) · **v1.4.0**
 
-A SillyTavern extension for **controllable chat memory management** — manual segment summarization, human review, and context injection. Keeps the AI aware of past story events instead of gradually forgetting as the chat grows.
+A SillyTavern extension for **controllable chat memory management**. Keep the default manual review flow, or opt each chat into automatic draft generation or adoption. Context injection and summary fusion help later replies continue established story events.
 
 > "古法 Memoir" — your memory, your control. No black boxes, no sneaky chat deletion.
 
 ---
 
-## How It Works
+## Default Semi-automatic Flow
 
 ```
 Select a floor range
        ↓
 LLM generates a story archive summary
        ↓
-You preview, edit, then confirm
+You preview, then confirm
        ↓
 Confirmed summaries auto-inject into conversation context
        ↓
@@ -59,6 +59,14 @@ git clone https://github.com/Asobi-123/memoir.git
 
 Refresh SillyTavern to start using.
 
+### Upgrading to 1.4.0
+
+Update the existing Memoir extension directory, or overwrite matching plugin files. There is no need to uninstall the old copy or install a second one. Docker users should update the actual mounted `data/<user>/extensions/memoir/` directory.
+
+Keep SillyTavern settings and chat files. API and prompt configuration live in extension settings; cumulative summaries and covered ranges live in each chat. Replacing plugin files does not clear this data. New chats and chats that have never enabled automation remain semi-automatic. Chats that already opted in retain their rules.
+
+Refresh the SillyTavern browser tab after upgrading. Select **Usage guide** next to the **Automation** heading in Settings for trigger, editing, visibility and undo rules.
+
 ---
 
 ## Usage
@@ -67,7 +75,7 @@ Refresh SillyTavern to start using.
 2. **Workspace**: Set floor range → Generate Summary → Preview → Confirm
    Here, "floor" simply means chat message order: the first message is 1, the second is 2.
 3. **Summaries**: View status, adjust injection strategy, edit/merge confirmed summaries
-4. **Settings**: Choose theme, configure API, select/edit summary presets, templates, and the mature-content archive compatibility patch
+4. **Settings**: Choose automation for this chat, open its usage guide, and configure the theme, API, summary presets and templates
 
 ### Prompt Customization
 
@@ -82,7 +90,11 @@ Refresh SillyTavern to start using.
 
 Open **Settings → Automation**, choose this chat's mode, set a batch size and recent-message reserve, then save to check one batch. Future complete character replies schedule another check once the host is idle. Each message counts as one floor: with a batch of 20 and reserve of 10, floors 1–20 become eligible at 30 messages, then 21–40 at 50.
 
+The **Usage guide** button beside the heading opens the full instructions without changing rules or starting a summary. Each trigger processes at most one batch. If you enable automation with 65 messages already present, it first handles floors 1–20; “Completed” refers to that batch. The next complete character reply checks floors 21–40, always respecting the recent-message reserve.
+
 Draft mode waits for your review and preserves its pending result across reloads. Automatic adoption saves usable results without review. Hiding is a separate opt-in and never deletes source text. The workspace offers pause/resume, interrupted-operation reconciliation and conditional undo of the last automatic adoption. Discarding a draft or performing manual edits pauses automation; later edits can invalidate undo.
+
+After saving edits or a fusion result, select **Resume and check one batch** in the workspace. New summaries append to the edited cumulative text without restarting from floor 1. Preserve range headings when editing; fusion uses them to identify covered history.
 
 Automatic generation uses saved prompt/template settings and currently requires an independent API. The shared API remains available for semi-automatic generation, but its global cancellation and temporary parameters cannot safely isolate background work. The Memoir panel may be closed; keep the SillyTavern browser tab running and use a browser with Web Locks, generally on HTTPS or localhost.
 

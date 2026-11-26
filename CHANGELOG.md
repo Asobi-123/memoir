@@ -5,13 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [1.4.0] - 2026-11-26
 
 ### Added
 
 - Optional per-chat automation with draft review or automatic adoption, configurable batch size and a recent-message reserve. New chats remain semi-automatic; automatic generation currently requires an independent API and browser Web Locks.
 - Separate opt-in source hiding after verified summary persistence, interrupted-operation reconciliation, and conditional undo of the latest automatic adoption.
 - Same-origin tab coordination, chat-scoped pending drafts, and localized task status and pause controls.
+- A bilingual, read-only usage guide beside the Automation heading, covering trigger timing, the 65-message example, editing/fusion recovery, hiding, undo and pause reasons. It supports keyboard navigation and narrow viewports while preserving unsaved form values.
+
+### Changed
+
+- Documented one-batch-per-trigger scheduling: “Completed” refers to the last batch, and a later complete character reply checks the next eligible range. Enabling automation does not continuously drain existing history.
+- Manual editing and summary fusion pause automation. Resuming appends to the edited cumulative summary while preserving covered history; later changes invalidate older undo snapshots.
+- Documentation now distinguishes the Memoir panel from the SillyTavern browser tab: closing the panel does not stop automation, while closing the tab does not leave a server background job running.
+- Existing installations can be upgraded in place without clearing settings or chat data. New chats remain semi-automatic, while existing per-chat automation rules are retained.
 
 ### Fixed
 
