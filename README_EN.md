@@ -84,7 +84,7 @@ Open **Settings → Automation**, choose this chat's mode, set a batch size and 
 
 Draft mode waits for your review and preserves its pending result across reloads. Automatic adoption saves usable results without review. Hiding is a separate opt-in and never deletes source text. The workspace offers pause/resume, interrupted-operation reconciliation and conditional undo of the last automatic adoption. Discarding a draft or performing manual edits pauses automation; later edits can invalidate undo.
 
-Automatic generation uses saved prompt/template settings and currently requires an independent API. The shared API remains available for semi-automatic generation, but its global cancellation and temporary parameters cannot safely isolate background work. Keep the page open and use a browser with Web Locks, generally on HTTPS or localhost.
+Automatic generation uses saved prompt/template settings and currently requires an independent API. The shared API remains available for semi-automatic generation, but its global cancellation and temporary parameters cannot safely isolate background work. The Memoir panel may be closed; keep the SillyTavern browser tab running and use a browser with Web Locks, generally on HTTPS or localhost.
 
 Fallback content, changed sources and unconfirmed saves do not authorize automatic hiding. Injection must also be enabled and compatible. Switching back to semi-automatic does not undo existing summaries or unhide messages. Same-origin tabs coordinate through browser locks; other devices and arbitrary external writers are outside that coordination.
 

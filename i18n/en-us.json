@@ -191,7 +191,7 @@
   "automation.batchSize": "Messages per summary",
   "automation.keepRecent": "Recent messages to keep",
   "automation.hide": "Hide source messages after automatic adoption is saved",
-  "automation.hint": "Each message counts as one floor. Uses saved settings while this page is open. Automatic generation currently requires an independent API. Switching to semi-automatic does not undo summaries or unhide messages.",
+  "automation.hint": "Each message counts as one floor. Uses saved settings. The Memoir panel may be closed; leave the SillyTavern browser tab running. Automatic generation currently requires an independent API. Switching to semi-automatic does not undo summaries or unhide messages.",
   "automation.profile": "Saved configuration",
   "automation.save": "Save chat rules and check one batch",
   "automation.pause": "Pause",
@@ -269,5 +269,5 @@
   "automation.help.troubleshooting.title": "Why processing waits or pauses",
   "automation.help.troubleshooting.body": "“Completed” without a pause: check whether another full character reply has arrived. Old history is not drained continuously.\nToo few eligible messages or a recent-message reserve: continue chatting until the next batch is eligible.\nPending draft: approve or discard it first. Discard pauses automation to avoid regenerating the same range.\nChanged sources, a small earlier gap, changed settings or manual editing: resolve the workspace notice, then resume.\nFallback or flagged output is not automatically adopted or hidden. If saving is unconfirmed, use “Reconcile interrupted operation” instead of generating the same range repeatedly. If injection is unavailable, enable it and choose a valid injection strategy.",
   "automation.help.requirements.title": "Requirements and scope",
-  "automation.help.requirements.body": "Automatic generation currently needs a saved, complete independent API configuration. Semi-automatic generation still supports the shared API. Keep the page open; closing it stops background summarization.\nYour browser must support safe automatic execution. If capabilities are unavailable, use a supported browser over HTTPS or localhost. Same-origin tabs coordinate operations; this does not coordinate simultaneous writes from other devices or extensions."
+  "automation.help.requirements.body": "Automatic generation currently needs a saved, complete independent API configuration. Semi-automatic generation still supports the shared API.\nThe Memoir panel does not need to stay open. While the SillyTavern browser tab remains running, completed character replies can trigger automation; reopen the panel to view the result. Closing that tab or exiting the browser stops automation; it does not continue as a server background job.\nYour browser must support safe automatic execution. If capabilities are unavailable, use a supported browser over HTTPS or localhost. Same-origin tabs coordinate operations; this does not coordinate simultaneous writes from other devices or extensions."
 }
